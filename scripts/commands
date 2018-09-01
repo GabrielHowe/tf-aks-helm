@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# this function makes it easier to ensure that we are using the same remote backend for our state file, I got tired of typing it every time I re-launched the cloud shell. 
+
+function tf-init {
+ terraform init -backend-config="storage_account_name=choose name of storage account" -backend-config="container_name=tfstate" -backend-config="access_key=insert access key here" -backend-config="key=codelab.microsoft.tfstate" 
+}
+
+
+#this function is just a short hand for ensuring our plan is written out to a file
+function tf-plan {
+ terraform plan -out out.plan
+}
+
+#short hand for applying out.plan file
+function tf-apply {
+ terraform apply out.plan
+}
+
+#used for destroying jenkins 
+function tf-destroy-jenkins {
+ terraform destroy --target module.jenkins-helm
+}
+
+#function used for setting the kubeconfig env_var. this is necessary whenever you reconnect to the cloud shell and lose your session
+function kube-set {
+ export KUBECONFIG=./azurek8s
+}
+
+#used to output something from our terraform outputs directly to a local file
+function kube-output {
+ echo "$(terraform output --module="aks-cluster" kube_config ) " > azurek8s
+}
+
+#used for displaying the kube_config file in the console
+function kube-show {
+terraform output --module="aks-cluster" kube_config
+}
+
+#wrapper function
+function kube-init {
+ kube-output
+ kube-set
+}
+
+setvmstate () {
+    rg=$1
+    state=$2
+    vmids=$(az vm list -g $rg --query "[].id" -o tsv)
+    az vm $2 --no-wait --ids $vmids -o tsv
+}
+
+function vms-start () {
+    rgs=$@
+    for rg in $rgs; do setvmstate "$rg" start & done
+    wait
+}
+
+function vms-stop () {
+    rgs=$@
+    for rg in $rgs; do setvmstate "$rg" stop & done
+    wait
+}
+
+function vms-deallocate () {
+    rgs=$@
+    for rg in $rgs; do setvmstate "$rg" deallocate & done
+    wait
+}
+
+function vms-restart () {
+    rgs=$@
+    for rg in $rgs; do setvmstate "$rg" restart & done
+    wait
+}
+
+getvmdetails () {
+ r=$1
+ az vm list -g $r -o table --show-details
+}
+
+function vms-show () {
+    rgs=$@
+    for rg in $rgs; do getvmdetails "$rg" & done
+    wait
+}
+
