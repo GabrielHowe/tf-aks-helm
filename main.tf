@@ -13,6 +13,12 @@ module "aks-cluster" {
   client_secret = "${var.client_secret}"
 }
 
+/*
 module "jenkins-helm" {
  source = "./modules/jenkins"
+}
+*/
+
+module "consul-helm" {
+ source = "./modules/consul"
 }

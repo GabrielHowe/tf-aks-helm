@@ -3,7 +3,7 @@
 # this function makes it easier to ensure that we are using the same remote backend for our state file, I got tired of typing it every time I re-launched the cloud shell. 
 
 function tf-init {
- terraform init -backend-config="storage_account_name=choose name of storage account" -backend-config="container_name=tfstate" -backend-config="access_key=insert access key here" -backend-config="key=codelab.microsoft.tfstate" 
+ terraform init -backend-config="storage_account_name=xxxxxx" -backend-config="container_name=tfstate" -backend-config="access_key=xxxxxxxxxxxxxxx" -backend-config="key=codelab.microsoft.tfstate" 
 }
 
 
@@ -15,6 +15,16 @@ function tf-plan {
 #short hand for applying out.plan file
 function tf-apply {
  terraform apply out.plan
+}
+
+#quick apply to create AKS cluster without modifying the main.tf
+function tf-aks-plan {
+ terraform plan -out out.plan --target module.aks-cluster
+}
+
+#quick apply to create consul 
+function tf-consul-plan {
+ terraform plan -out out.plan --target module.consul-helm
 }
 
 #used for destroying jenkins 
@@ -41,47 +51,5 @@ terraform output --module="aks-cluster" kube_config
 function kube-init {
  kube-output
  kube-set
-}
-
-setvmstate () {
-    rg=$1
-    state=$2
-    vmids=$(az vm list -g $rg --query "[].id" -o tsv)
-    az vm $2 --no-wait --ids $vmids -o tsv
-}
-
-function vms-start () {
-    rgs=$@
-    for rg in $rgs; do setvmstate "$rg" start & done
-    wait
-}
-
-function vms-stop () {
-    rgs=$@
-    for rg in $rgs; do setvmstate "$rg" stop & done
-    wait
-}
-
-function vms-deallocate () {
-    rgs=$@
-    for rg in $rgs; do setvmstate "$rg" deallocate & done
-    wait
-}
-
-function vms-restart () {
-    rgs=$@
-    for rg in $rgs; do setvmstate "$rg" restart & done
-    wait
-}
-
-getvmdetails () {
- r=$1
- az vm list -g $r -o table --show-details
-}
-
-function vms-show () {
-    rgs=$@
-    for rg in $rgs; do getvmdetails "$rg" & done
-    wait
 }
 
